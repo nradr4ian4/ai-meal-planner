@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Meal Planner</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <header>
+        <h1>AI Meal Planner</h1>
+
+        <nav>
+            <button onclick="showPage('recipes')">
+                Recipes
+            </button>
+
+            <button onclick="showPage('cook')">
+                Cook
+            </button>
+
+            <button onclick="showPage('chat')">
+                Chat
+            </button>
+        </nav>
+    </header>
+
+    <main id="app">
+        <!-- Page content will appear here -->
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

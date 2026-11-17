@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Meal Planner</title>
+<style>
+:root{--bg:#f6f4ee;--fg:#1f2a22;--mut:#4d5a50;--card:#fff;--line:#d3dacb;--acc:#2e7d4f;--on:#fff;--soft:#e4efe6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a16;--fg:#eaf0e8;--mut:#a9b6aa;--card:#1e251f;--line:#34413a;--acc:#5fbf84;--on:#0f1a13;--soft:#26332a}}
+:root[data-theme="dark"]{--bg:#151a16;--fg:#eaf0e8;--mut:#a9b6aa;--card:#1e251f;--line:#34413a;--acc:#5fbf84;--on:#0f1a13;--soft:#26332a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--card);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--card);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:4px 20px;padding:8px 20px}
+header h1{font:700 20px Georgia,serif;margin:0 auto 0 0}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav a{color:var(--fg);text-decoration:none;padding:10px 14px;border-radius:8px;min-height:44px;display:inline-flex;align-items:center}
+nav a[aria-current="page"]{background:var(--acc);color:var(--on);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h2{font:700 26px Georgia,serif;margin:0 0 6px}h3{margin:20px 0 8px}
+p.sub,small,.mut{color:var(--mut)}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{cursor:pointer}
+.btn,.chip{border:2px solid var(--acc);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 16px;min-height:44px}
+.btn{background:var(--acc);color:var(--on);font-weight:600;border-radius:8px}
+.btn.alt{background:var(--card);color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--acc);color:var(--on)}
+input,select,textarea{border:2px solid var(--line);background:var(--card);border-radius:8px;padding:10px 12px;min-height:44px;max-width:100%}
+textarea{width:100%;min-height:90px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.open{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.open:focus-visible,.fav:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.ph{height:96px;border-radius:8px;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}.tags i{font-style:normal;font-size:12px;background:var(--soft);padding:2px 8px;border-radius:999px}
+.fav{position:absolute;top:18px;right:18px;border:0;background:var(--card);border-radius:50%;width:44px;height:44px;font-size:22px;color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.wrap{overflow-x:auto}
+table{border-collapse:separate;border-spacing:6px;min-width:760px;width:100%}
+th{font-size:14px}td select{width:100%}
+.over{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto}
+.dlg{background:var(--card);border-radius:14px;max-width:620px;width:100%;padding:20px;margin:auto}
+.msgs{display:flex;flex-direction:column;gap:10px;min-height:260px;max-height:50vh;overflow:auto}
+.m{max-width:80%;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card)}.m.b{background:var(--soft);align-self:flex-start}.m.u{align-self:flex-end}
+.lab{display:block;font-weight:600;margin:12px 0 4px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+</style>
+</head>
+<body>
+<header><h1>AI Meal Planner</h1><nav id="nav" aria-label="Main"></nav></header>
+<main id="app"></main>
+<div id="ov"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>{s=s.toLowerCase().trim();return s.endsWith('ies')?s.slice(0,-3)+'y':s.endsWith('oes')?s.slice(0,-2):(s.endsWith('s')&&!s.endsWith('ss'))?s.slice(0,-1):s};
+const STAPLE=['salt','pepper','oil','water'];
+const mk=(id,name,cu,kc,sv,f,ing,steps)=>({id,name,cu,kc,sv,h:f.includes('h'),v:f.includes('v'),s:f.includes('s'),l:f.includes('l'),ing:ing.split(',').map(x=>{const[a,b,c]=x.split('|');return{n:a,q:+b||0,u:c||''}}),steps});
+const R=[
+mk('r1','Chickpea and spinach curry','Indian',380,2,'hv','chickpeas|1|can,spinach|200|g,onion|1,tomato|2,rice|150|g,cumin|1|tsp,oil|1|tbsp',['Fry onion and cumin in oil.','Add tomato, chickpeas and spinach; simmer 12 minutes.','Serve over cooked rice.']),
+mk('r2','Lemon garlic chicken and rice','Mediterranean',520,2,'h','chicken|300|g,rice|150|g,lemon|1,garlic|2|clove,butter|1|tbsp,salt|1|tsp',['Marinate chicken in lemon juice and garlic.','Pan-fry in butter until cooked through.','Serve with rice.']),
+mk('r3','Prawn fried rice','Chinese',460,2,'s','prawns|200|g,rice|200|g,egg|2,spring onion|2,soy sauce|2|tbsp,pea|80|g,oil|1|tbsp',['Scramble the eggs and set aside.','Stir-fry prawns, peas and rice.','Add soy sauce, eggs and spring onion.']),
+mk('r4','Vegetable stir-fry noodles','Chinese',410,2,'hv','noodles|200|g,carrot|1,cabbage|150|g,garlic|2|clove,soy sauce|2|tbsp,ginger|1|tsp,oil|1|tbsp',['Boil noodles and drain.','Stir-fry vegetables, garlic and ginger.','Toss with noodles and soy sauce.']),
+mk('r5','Tomato basil pasta','Italian',430,2,'hv','pasta|200|g,tomato|4,garlic|2|clove,basil|10|leaf,oil|1|tbsp',['Cook the pasta.','Simmer chopped tomato and garlic for 10 minutes.','Mix with pasta and basil.']),
+mk('r6','Shakshuka','Middle Eastern',330,2,'hl','egg|4,tomato|4,onion|1,capsicum|1,cumin|1|tsp,oil|1|tbsp',['Soften onion and capsicum.','Add tomato and cumin; simmer.','Crack in the eggs and cover until set.']),
+mk('r7','Grilled salmon with broccoli','Western',450,2,'hsl','salmon|300|g,broccoli|200|g,lemon|1,garlic|1|clove,butter|1|tbsp',['Season salmon with lemon and garlic.','Grill 4 minutes per side.','Steam the broccoli and serve with butter.']),
+mk('r8','Red lentil soup','Middle Eastern',290,3,'hv','lentils|200|g,carrot|2,onion|1,garlic|2|clove,cumin|1|tsp,lemon|1,water|1|l',['Soften onion, carrot and garlic.','Add lentils, cumin and water; simmer 25 minutes.','Blend and finish with lemon.']),
+mk('r9','Chicken teriyaki rice bowl','Japanese',500,2,'h','chicken|300|g,rice|200|g,soy sauce|3|tbsp,ginger|1|tsp,broccoli|100|g,honey|1|tbsp',['Simmer chicken with soy sauce, ginger and honey.','Steam the broccoli.','Serve over rice.']),
+mk('r10','Spinach tomato omelette','Western',260,1,'hl','egg|3,spinach|50|g,tomato|1,onion|0.5,butter|1|tsp',['Whisk the eggs.','Cook the vegetables in butter.','Pour in the eggs and fold.']),
+mk('r11','Mushroom risotto','Italian',470,3,'h','rice|250|g,mushroom|200|g,onion|1,garlic|2|clove,butter|2|tbsp,stock|500|ml,cheese|50|g',['Fry mushroom, onion and garlic in butter.','Add rice, then stock a ladle at a time.','Stir in cheese.']),
+mk('r12','Tofu vegetable curry','Thai',360,2,'hv','tofu|250|g,coconut milk|200|ml,capsicum|1,carrot|1,curry paste|2|tbsp,rice|150|g',['Fry curry paste, then add vegetables.','Add tofu and coconut milk; simmer 10 minutes.','Serve with rice.']),
+mk('r13','Zucchini chicken skillet','Western',340,2,'hl','chicken|300|g,zucchini|2,garlic|2|clove,tomato|2,cheese|40|g,oil|1|tbsp',['Brown the chicken in oil.','Add zucchini, garlic and tomato.','Top with cheese until melted.'])];
+const SUB={butter:'olive oil or margarine, in about the same amount',milk:'oat or soy milk',egg:'1 tbsp ground flax mixed with 3 tbsp water per egg',cream:'coconut milk',cheese:'nutritional yeast for a vegan option',honey:'maple syrup',lemon:'lime, or a splash of vinegar',chicken:'tofu or chickpeas',rice:'quinoa, or cauliflower rice for low carb',pasta:'zucchini noodles or wholewheat pasta','soy sauce':'tamari or coconut aminos',onion:'spring onion or leek',garlic:'a pinch of garlic powder'};
+const swap=n=>{const k=Object.keys(SUB).find(k=>norm(n)===norm(k)||norm(n).includes(norm(k)));return k?'Instead of '+n+', try '+SUB[k]+'.':'For '+n+', try a similar ingredient from the same food group, or leave it out and adjust the seasoning.'};
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],MEALS=['Breakfast','Lunch','Dinner','Snack'];
+let S={route:'recipes',q:'',cu:'All',fo:0,f:{v:0,h:0,s:0},fav:[],plan:{},mine:[],goal:1800,have:[],open:null,sv:1,chat:[{b:1,t:'Hi! Ask for a substitute (“I have no butter”), low-carb ideas, or say “I have chickpeas, rice”. This demo answers with built-in rules; the real app sends the same messages to Gemini.'}]};
+try{const x=JSON.parse(localStorage.getItem('mp')||'null');if(x){S.fav=x.fav||[];S.plan=x.plan||{};S.mine=x.mine||[];S.goal=x.goal||1800;S.f=x.f||S.f}}catch(e){}
+const save=()=>{try{localStorage.setItem('mp',JSON.stringify({fav:S.fav,plan:S.plan,mine:S.mine,goal:S.goal,f:S.f}))}catch(e){}};
+const all=()=>R.concat(S.mine),byId=id=>all().find(r=>r.id===id);
+const ok=r=>!(S.f.v&&!r.v)&&!(S.f.h&&!r.h)&&!(S.f.s&&r.s);
+const filt=()=>all().filter(r=>ok(r)&&(S.cu==='All'||r.cu===S.cu)&&(!S.fo||S.fav.includes(r.id))&&(!S.q||(r.name+' '+r.ing.map(i=>i.n).join(' ')).toLowerCase().includes(S.q.toLowerCase())));
+const tags=r=>(r.v?'<i>Vegan</i>':'')+(r.h?'<i>Halal</i>':'')+(r.s?'<i>Seafood</i>':'')+(r.l?'<i>Low carb</i>':'');
+const card=r=>{const f=S.fav.includes(r.id);return `<article class="card"><button class="open" data-act="open" data-id="${r.id}"><span class="ph">${esc(r.cu)}</span><b>${esc(r.name)}</b><small>${r.kc} kcal per serving · ${r.sv} servings</small></button><div class="tags">${tags(r)}</div><button class="fav" data-act="fav" data-id="${r.id}" aria-pressed="${f}" aria-label="${f?'Remove from':'Add to'} favourites">${f?'♥':'♡'}</button></article>`};
+const grid=()=>{const l=filt();return l.length?l.map(card).join(''):'<p class="mut">No recipes match these filters.</p>'};
+const matches=(have)=>{const h=have.map(norm);return all().filter(ok).map(r=>{const need=r.ing.filter(i=>!STAPLE.includes(norm(i.n)));const miss=need.filter(i=>!h.includes(norm(i.n)));return{r,miss,used:need.length-miss.length}}).filter(x=>x.used>0&&x.miss.length<=2).sort((a,b)=>a.miss.length-b.miss.length)};
+const V={
+recipes:()=>`<h2>Discover recipes</h2><p class="sub">Search by name or ingredient. Filters stay saved on this device.</p>
+<div class="row"><label class="lab" for="q" style="margin:0">Search</label><input id="q" type="search" placeholder="e.g. chicken, tofu" value="${esc(S.q)}" style="flex:1;min-width:200px"><label class="lab" for="cu" style="margin:0">Cuisine</label><select id="cu">${['All',...new Set(all().map(r=>r.cu))].map(c=>`<option ${c===S.cu?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+<div class="chips" role="group" aria-label="Filters">${[['v','Vegan'],['h','Halal'],['s','No seafood']].map(([k,l])=>`<button class="chip" data-act="flt" data-k="${k}" aria-pressed="${!!S.f[k]}">${l}</button>`).join('')}<button class="chip" data-act="favonly" aria-pressed="${!!S.fo}">Favourites only</button></div>
+<div class="grid" id="grid" style="margin-top:18px">${grid()}</div>`,
+cook:()=>{const m=matches(S.have),rd=m.filter(x=>!x.miss.length),al=m.filter(x=>x.miss.length);
+const c=(x)=>`<article class="card"><button class="open" data-act="open" data-id="${x.r.id}"><span class="ph">${esc(x.r.cu)}</span><b>${esc(x.r.name)}</b></button><small>${x.miss.length?'Missing: '+x.miss.map(i=>esc(i.n)).join(', '):'You have everything'}</small>${x.miss.map(i=>`<button class="btn alt" data-act="swapq" data-n="${esc(i.n)}">Ask AI to swap ${esc(i.n)}</button>`).join('')}</article>`;
+return `<h2>Cook with what I have</h2><p class="sub">Add the ingredients you have. Salt, pepper, oil and water are assumed.</p>
+<div class="row"><label class="lab" for="ing" style="margin:0">Ingredient</label><input id="ing" placeholder="e.g. rice" style="flex:1;min-width:180px"><button class="btn" data-act="addi">Add</button></div>
+<div class="chips">${S.have.map((h,i)=>`<button class="chip" data-act="deli" data-i="${i}" aria-label="Remove ${esc(h)}">${esc(h)} ✕</button>`).join('')||'<span class="mut">No ingredients yet.</span>'}</div>
+${S.have.length?`<h3>Ready to cook now</h3><div class="grid">${rd.map(c).join('')||'<p class="mut">Nothing yet. See the next list.</p>'}</div><h3>Almost there (missing 1 or 2)</h3><div class="grid">${al.map(c).join('')||'<p class="mut">No near matches.</p>'}</div><div class="row"><button class="btn" data-act="gen">Generate a recipe with AI</button></div>`:''}`},
+planner:()=>{const tot=d=>MEALS.reduce((s,m)=>{const r=byId(S.plan[d+'-'+m]);return s+(r?r.kc:0)},0);
+return `<h2>Weekly planner</h2><p class="sub">Pick a recipe for each slot. Totals count one serving per meal.</p>
+<div class="row"><label for="goal" class="lab" style="margin:0">Daily calorie goal</label><input id="goal" type="number" min="800" max="6000" value="${S.goal}" style="width:110px"></div>
+<div class="wrap"><table><thead><tr><th></th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+${MEALS.map(m=>`<tr><th scope="row">${m}</th>${DAYS.map(d=>`<td><select data-act="plan" data-k="${d}-${m}" aria-label="${d} ${m}"><option value="">—</option>${all().map(r=>`<option value="${r.id}" ${S.plan[d+'-'+m]===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select></td>`).join('')}</tr>`).join('')}
+<tr><th scope="row">Calories</th>${DAYS.map(d=>{const t=tot(d),p=Math.min(100,t/S.goal*100);return `<td><small>${t} / ${S.goal}</small><div class="bar"><i style="width:${p}%"></i></div></td>`}).join('')}</tr></tbody></table></div>`},
+mine:()=>`<h2>My recipes</h2><p class="sub">Add your own recipes. They appear in search, the planner and ingredient matching.</p>
+<form id="mf" class="box"><label class="lab" for="mn">Recipe name</label><input id="mn" required style="width:100%">
+<div class="row"><div><label class="lab" for="mc">Cuisine</label><input id="mc" value="Home style"></div><div><label class="lab" for="mk">Calories per serving</label><input id="mk" type="number" min="0" required style="width:150px"></div><div><label class="lab" for="ms">Servings</label><input id="ms" type="number" min="1" value="2" style="width:100px"></div></div>
+<label class="lab" for="mi">Ingredients (one per line, e.g. “2 onion” or “200 g rice”)</label><textarea id="mi" required></textarea>
+<label class="lab" for="mt">Steps (one per line)</label><textarea id="mt"></textarea>
+<div class="chips" style="margin:12px 0"><label><input type="checkbox" id="tv"> Vegan</label><label><input type="checkbox" id="th"> Halal</label><label><input type="checkbox" id="ts"> Contains seafood</label></div>
+<p class="sub">You set the tags and calories, so please check them yourself.</p><button class="btn" type="submit">Save recipe</button></form>
+<h3>Saved recipes (${S.mine.length})</h3><div class="grid">${S.mine.map(card).join('')||'<p class="mut">None yet.</p>'}</div>`,
+chat:()=>`<h2>AI assistant</h2><p class="sub">Substitutions, low-carb ideas and recipes from your ingredients. AI nutrition and allergen info are estimates; always check labels.</p>
+<div class="box"><div class="msgs" id="msgs" aria-live="polite">${S.chat.map(m=>`<div class="m ${m.b?'b':'u'}">${esc(m.t)}</div>`).join('')}</div>
+<div class="chips" style="margin-top:12px">${['I have no butter','Low carb ideas','I have chicken, rice, broccoli'].map(t=>`<button class="chip" data-act="say" data-t="${t}">${t}</button>`).join('')}</div>
+<div class="row"><label class="lab" for="ci" style="margin:0">Message</label><input id="ci" style="flex:1;min-width:200px" placeholder="Type a message"><button class="btn" data-act="send">Send</button></div></div>`};
+const reply=t=>{const l=t.toLowerCase();let o;
+if(/low[- ]?carb/.test(l)){const x=all().filter(r=>ok(r)&&r.l);o='Low-carb picks for your filters: '+(x.map(r=>r.name+' ('+r.kc+' kcal)').join(', ')||'none found.')+'.'}
+else if(/\bhave\b(?!\s+no)/.test(l)&&!/\bno\b/.test(l)){const w=l.split(/\bhave\b/)[1].split(/,|\band\b/).map(s=>s.trim()).filter(Boolean);const m=matches(w).slice(0,4);o=m.length?'With '+w.join(', ')+' you could make: '+m.map(x=>x.r.name+(x.miss.length?' (missing '+x.miss.map(i=>i.n).join(', ')+')':'')).join('; ')+'.':'I couldn’t find a close match. Try adding more ingredients.'}
+else{const k=Object.keys(SUB).find(k=>l.includes(k));o=k?swap(k):'I can suggest substitutes, low-carb recipes, or recipes from your ingredients.'}
+return o+' Please double-check allergens yourself.'};
+const send=t=>{if(!t.trim())return;S.chat.push({t},{b:1,t:reply(t)});go('chat')};
+const go=r=>{S.route=r;render()};
+function render(){$('#nav').innerHTML=[['recipes','Recipes'],['cook','Cook'],['planner','Planner'],['mine','My recipes'],['chat','Chat']].map(([k,l])=>`<a href="#${k}" ${S.route===k?'aria-current="page"':''}>${l}</a>`).join('');
+$('#app').innerHTML=V[S.route]();const m=$('#msgs');if(m)m.scrollTop=m.scrollHeight;
+const r=S.open&&byId(S.open);$('#ov').innerHTML=r?`<div class="over" data-act="close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="row" style="justify-content:space-between"><h2 id="dt" style="margin:0">${esc(r.name)}</h2><button class="btn alt" data-act="close">Close</button></div><div class="tags">${tags(r)}</div><p class="sub">${esc(r.cu)} · ${r.kc} kcal per serving · ${r.kc*S.sv} kcal in total</p>
+<div class="row"><b>Servings</b><button class="chip" data-act="sv" data-d="-1" aria-label="Fewer servings">−</button><b>${S.sv}</b><button class="chip" data-act="sv" data-d="1" aria-label="More servings">+</button></div>
+<h3>Ingredients</h3><ul>${r.ing.map(i=>`<li>${i.q?+(i.q*S.sv/r.sv).toFixed(2)+' '+esc(i.u)+' ':''}${esc(i.n)}</li>`).join('')}</ul><h3>Steps</h3><ol>${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')||'<li>No steps added.</li>'}</ol>
+<div class="row"><select id="pd" aria-label="Day">${DAYS.map(d=>`<option>${d}</option>`).join('')}</select><select id="pm" aria-label="Meal">${MEALS.map(d=>`<option>${d}</option>`).join('')}</select><button class="btn" data-act="addplan">Add to planner</button><button class="btn alt" data-act="fav" data-id="${r.id}">${S.fav.includes(r.id)?'♥ Favourited':'♡ Favourite'}</button></div></div></div>`:''}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
+if(a==='close'){if(e.target!==b&&b.classList.contains('over'))return;S.open=null;render()}
+else if(a==='open'){S.open=id;S.sv=byId(id).sv;render()}
+else if(a==='fav'){S.fav=S.fav.includes(id)?S.fav.filter(x=>x!==id):[...S.fav,id];save();render()}
+else if(a==='flt'){S.f[b.dataset.k]=S.f[b.dataset.k]?0:1;save();render()}
+else if(a==='favonly'){S.fo=S.fo?0:1;render()}
+else if(a==='addi'){const i=$('#ing');if(i.value.trim()){S.have.push(i.value.trim());render();$('#ing').focus()}}
+else if(a==='deli'){S.have.splice(+b.dataset.i,1);render()}
+else if(a==='swapq'){S.chat.push({t:'I have no '+b.dataset.n},{b:1,t:swap(b.dataset.n)+' Please double-check allergens yourself.'});go('chat')}
+else if(a==='gen'){S.chat.push({t:'Create a recipe with '+S.have.join(', ')},{b:1,t:'In the full app, Gemini would write a new recipe here as structured JSON. This demo suggests: '+(matches(S.have).slice(0,3).map(x=>x.r.name).join(', ')||'add more ingredients')+'.'});go('chat')}
+else if(a==='sv'){S.sv=Math.max(1,S.sv+ +b.dataset.d);render()}
+else if(a==='addplan'){S.plan[$('#pd').value+'-'+$('#pm').value]=S.open;save();S.open=null;go('planner')}
+else if(a==='say'){send(b.dataset.t)}
+else if(a==='send'){const i=$('#ci');send(i.value)}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;$('#grid').innerHTML=grid()}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='cu'){S.cu=t.value;$('#grid').innerHTML=grid()}
+else if(t.dataset.act==='plan'){if(t.value)S.plan[t.dataset.k]=t.value;else delete S.plan[t.dataset.k];save();render()}
+else if(t.id==='goal'){S.goal=Math.max(800,+t.value||1800);save();render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.open){S.open=null;render()}
+if(e.key==='Enter'&&e.target.id==='ing'){e.preventDefault();$('[data-act="addi"]').click()}
+if(e.key==='Enter'&&e.target.id==='ci'){send(e.target.value)}});
+document.addEventListener('submit',e=>{if(e.target.id!=='mf')return;e.preventDefault();
+const ing=$('#mi').value.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^([\d.]+)?\s*(g|kg|ml|l|tsp|tbsp|cup|cups|piece|pieces|clove|cloves)?\s*(.+)$/i);return(m[3]+'|'+(m[1]||0)+'|'+(m[2]||'')).replace(/,/g,' ')});
+const f=(($('#tv').checked?'v':'')+($('#th').checked?'h':'')+($('#ts').checked?'s':''));
+const r=mk('m'+Date.now(),$('#mn').value.trim(),$('#mc').value.trim()||'Home style',+$('#mk').value,+$('#ms').value||1,f,ing.join(','),$('#mt').value.split('\n').map(s=>s.trim()).filter(Boolean));
+S.mine.push(r);save();render()});
+const hash=()=>{const h=location.hash.slice(1);if(V[h])S.route=h;render()};
+addEventListener('hashchange',hash);hash();
+</script>
+</body>
+</html>

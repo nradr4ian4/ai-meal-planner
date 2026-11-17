@@ -1,0 +1,87 @@
+:root{--bg:#f6f4ee;--fg:#1f2a22;--mut:#4d5a50;--card:#fff;--line:#d3dacb;--acc:#2e7d4f;--on:#fff;--soft:#e4efe6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a16;--fg:#eaf0e8;--mut:#a9b6aa;--card:#1e251f;--line:#34413a;--acc:#5fbf84;--on:#0f1a13;--soft:#26332a}}
+:root[data-theme="dark"]{--bg:#151a16;--fg:#eaf0e8;--mut:#a9b6aa;--card:#1e251f;--line:#34413a;--acc:#5fbf84;--on:#0f1a13;--soft:#26332a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--card);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--card);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:4px 20px;padding:8px 20px}
+header h1{font:700 20px Georgia,serif;margin:0 auto 0 0}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav a{color:var(--fg);text-decoration:none;padding:10px 14px;border-radius:8px;min-height:44px;display:inline-flex;align-items:center}
+nav a[aria-current="page"]{background:var(--acc);color:var(--on);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h2{font:700 26px Georgia,serif;margin:0 0 6px}h3{margin:20px 0 8px}
+p.sub,small,.mut{color:var(--mut)}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{cursor:pointer}
+.btn,.chip{border:2px solid var(--acc);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 16px;min-height:44px}
+.btn{background:var(--acc);color:var(--on);font-weight:600;border-radius:8px}
+.btn.alt{background:var(--card);color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--acc);color:var(--on)}
+input,select,textarea{border:2px solid var(--line);background:var(--card);border-radius:8px;padding:10px 12px;min-height:44px;max-width:100%}
+textarea{width:100%;min-height:90px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.open{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.open:focus-visible,.fav:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.ph{height:96px;border-radius:8px;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}.tags i{font-style:normal;font-size:12px;background:var(--soft);padding:2px 8px;border-radius:999px}
+.fav{position:absolute;top:18px;right:18px;border:0;background:var(--card);border-radius:50%;width:44px;height:44px;font-size:22px;color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.wrap{overflow-x:auto}
+table{border-collapse:separate;border-spacing:6px;min-width:760px;width:100%}
+th{font-size:14px}td select{width:100%}
+.over{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto}
+.dlg{background:var(--card);border-radius:14px;max-width:620px;width:100%;padding:20px;margin:auto}
+.msgs{display:flex;flex-direction:column;gap:10px;min-height:260px;max-height:50vh;overflow:auto}
+.m{max-width:80%;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card)}.m.b{background:var(--soft);align-self:flex-start}.m.u{align-self:flex-end}
+.lab{display:block;font-weight:600;margin:12px 0 4px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+
+
+/* =================================
+   GLOBAL BUTTON TEXT VISIBILITY
+================================= */
+
+/* Apply black text to all buttons */
+button,
+button *,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn {
+    color: #000000 !important;
+}
+
+/* Button appearance */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn {
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Keep button text black when hovering */
+button:hover,
+button:hover *,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+.btn:hover {
+    color: #000000 !important;
+}
+
+/* Keep button text black when clicked or active */
+button:active,
+button:active *,
+button.active,
+button.active *,
+.btn:active {
+    color: #000000 !important;
+}
+
